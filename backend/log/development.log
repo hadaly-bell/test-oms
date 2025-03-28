@@ -1,0 +1,70 @@
+  [1m[35m (1.4ms)[0m  [1m[35mCREATE TABLE "schema_migrations" ("version" varchar NOT NULL PRIMARY KEY)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE TABLE "ar_internal_metadata" ("key" varchar NOT NULL PRIMARY KEY, "value" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL)[0m
+  [1m[36mActiveRecord::InternalMetadata Load (0.1ms)[0m  [1m[34mSELECT * FROM "ar_internal_metadata" WHERE "ar_internal_metadata"."key" = ? ORDER BY "ar_internal_metadata"."key" ASC LIMIT 1[0m  [[nil, "environment"]]
+  [1m[36mActiveRecord::InternalMetadata Create (0.1ms)[0m  [1m[32mINSERT INTO "ar_internal_metadata" ("key", "value", "created_at", "updated_at") VALUES ('environment', 'development', '2025-03-28 08:55:40.109043', '2025-03-28 08:55:40.109046') RETURNING "key"[0m
+  [1m[36mActiveRecord::SchemaMigration Load (0.1ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC[0m
+Migrating to CreatePartners (20250328085302)
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mbegin transaction[0m
+  [1m[35m (0.7ms)[0m  [1m[35mCREATE TABLE "partners" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "representative_last_name" varchar, "representative_first_name" varchar, "email" varchar, "phone" varchar, "address" text, "partner_type" varchar NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE UNIQUE INDEX "index_partners_on_email" ON "partners" ("email")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_partners_on_partner_type" ON "partners" ("partner_type")[0m
+  [1m[36mActiveRecord::SchemaMigration Create (0.1ms)[0m  [1m[32mINSERT INTO "schema_migrations" ("version") VALUES ('20250328085302') RETURNING "version"[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mcommit transaction[0m
+Migrating to CreateOrders (20250328085303)
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mbegin transaction[0m
+  [1m[35m (0.6ms)[0m  [1m[35mCREATE TABLE "orders" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "partner_id" integer NOT NULL, "order_type" varchar NOT NULL, "amount" decimal(10,2), "status" varchar DEFAULT 'draft' NOT NULL, "order_date" date, "delivery_date" date, "notes" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_5169a50320"
+FOREIGN KEY ("partner_id")
+  REFERENCES "partners" ("id")
+)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_orders_on_partner_id" ON "orders" ("partner_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_orders_on_order_type" ON "orders" ("order_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_orders_on_status" ON "orders" ("status")[0m
+  [1m[36mActiveRecord::SchemaMigration Create (0.1ms)[0m  [1m[32mINSERT INTO "schema_migrations" ("version") VALUES ('20250328085303') RETURNING "version"[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mcommit transaction[0m
+Migrating to CreateStatusHistories (20250328085304)
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mbegin transaction[0m
+  [1m[35m (0.6ms)[0m  [1m[35mCREATE TABLE "status_histories" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "order_id" integer NOT NULL, "from_status" varchar, "to_status" varchar NOT NULL, "comment" text, "created_by" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_a190021782"
+FOREIGN KEY ("order_id")
+  REFERENCES "orders" ("id")
+)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_status_histories_on_order_id" ON "status_histories" ("order_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_status_histories_on_to_status" ON "status_histories" ("to_status")[0m
+  [1m[36mActiveRecord::SchemaMigration Create (0.1ms)[0m  [1m[32mINSERT INTO "schema_migrations" ("version") VALUES ('20250328085304') RETURNING "version"[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mcommit transaction[0m
+Migrating to CreateUsers (20250328085305)
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mbegin transaction[0m
+  [1m[35m (0.6ms)[0m  [1m[35mCREATE TABLE "users" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "email" varchar NOT NULL, "last_name" varchar, "first_name" varchar, "role" varchar DEFAULT 'user', "avatar_url" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE UNIQUE INDEX "index_users_on_email" ON "users" ("email")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_users_on_role" ON "users" ("role")[0m
+  [1m[36mActiveRecord::SchemaMigration Create (0.1ms)[0m  [1m[32mINSERT INTO "schema_migrations" ("version") VALUES ('20250328085305') RETURNING "version"[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mcommit transaction[0m
+  [1m[36mActiveRecord::SchemaMigration Load (0.1ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC[0m
+  [1m[36mActiveRecord::SchemaMigration Load (0.1ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mbegin transaction[0m
+  [1m[36mPartner Exists? (0.8ms)[0m  [1m[34mSELECT 1 AS one FROM "partners" WHERE "partners"."email" = ? LIMIT ?[0m  [["email", "yamada@example.com"], ["LIMIT", 1]]
+  [1m[36mPartner Create (0.2ms)[0m  [1m[32mINSERT INTO "partners" ("name", "representative_last_name", "representative_first_name", "email", "phone", "address", "partner_type", "created_at", "updated_at") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING "id"[0m  [["name", "株式会社山田商事"], ["representative_last_name", "山田"], ["representative_first_name", "太郎"], ["email", "yamada@example.com"], ["phone", "03-1234-5678"], ["address", "東京都渋谷区1-1-1"], ["partner_type", "customer"], ["created_at", "2025-03-28 08:56:14.554890"], ["updated_at", "2025-03-28 08:56:14.554890"]]
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mcommit transaction[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mbegin transaction[0m
+  [1m[36mPartner Exists? (0.7ms)[0m  [1m[34mSELECT 1 AS one FROM "partners" WHERE "partners"."email" = ? LIMIT ?[0m  [["email", "tanaka@example.com"], ["LIMIT", 1]]
+  [1m[36mPartner Create (0.1ms)[0m  [1m[32mINSERT INTO "partners" ("name", "representative_last_name", "representative_first_name", "email", "phone", "address", "partner_type", "created_at", "updated_at") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING "id"[0m  [["name", "田中物産株式会社"], ["representative_last_name", "田中"], ["representative_first_name", "花子"], ["email", "tanaka@example.com"], ["phone", "06-8765-4321"], ["address", "大阪府大阪市中央区2-2-2"], ["partner_type", "supplier"], ["created_at", "2025-03-28 08:56:14.558484"], ["updated_at", "2025-03-28 08:56:14.558484"]]
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mcommit transaction[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mbegin transaction[0m
+  [1m[36mUser Exists? (0.8ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = ? LIMIT ?[0m  [["email", "admin@example.com"], ["LIMIT", 1]]
+  [1m[36mUser Create (0.1ms)[0m  [1m[32mINSERT INTO "users" ("email", "last_name", "first_name", "role", "avatar_url", "created_at", "updated_at") VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING "id"[0m  [["email", "admin@example.com"], ["last_name", "管理"], ["first_name", "太郎"], ["role", "admin"], ["avatar_url", nil], ["created_at", "2025-03-28 08:56:14.569659"], ["updated_at", "2025-03-28 08:56:14.569659"]]
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mcommit transaction[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mbegin transaction[0m
+  [1m[36mUser Exists? (0.7ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = ? LIMIT ?[0m  [["email", "user@example.com"], ["LIMIT", 1]]
+  [1m[36mUser Create (0.1ms)[0m  [1m[32mINSERT INTO "users" ("email", "last_name", "first_name", "role", "avatar_url", "created_at", "updated_at") VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING "id"[0m  [["email", "user@example.com"], ["last_name", "一般"], ["first_name", "次郎"], ["role", "user"], ["avatar_url", nil], ["created_at", "2025-03-28 08:56:14.572823"], ["updated_at", "2025-03-28 08:56:14.572823"]]
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mcommit transaction[0m
+  [1m[36mPartner Load (0.1ms)[0m  [1m[34mSELECT "partners".* FROM "partners" WHERE "partners"."partner_type" = ? LIMIT ?[0m  [["partner_type", "customer"], ["LIMIT", 1]]
+  [1m[36mPartner Load (0.0ms)[0m  [1m[34mSELECT "partners".* FROM "partners" WHERE "partners"."partner_type" = ? LIMIT ?[0m  [["partner_type", "supplier"], ["LIMIT", 1]]
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mbegin transaction[0m
+  [1m[36mOrder Create (0.8ms)[0m  [1m[32mINSERT INTO "orders" ("partner_id", "order_type", "amount", "status", "order_date", "delivery_date", "notes", "created_at", "updated_at") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING "id"[0m  [["partner_id", 1], ["order_type", "sale"], ["amount", 50000.0], ["status", "pending"], ["order_date", "2025-03-28"], ["delivery_date", "2025-04-04"], ["notes", "特急対応"], ["created_at", "2025-03-28 08:56:14.591563"], ["updated_at", "2025-03-28 08:56:14.591563"]]
+  [1m[36mStatusHistory Create (0.1ms)[0m  [1m[32mINSERT INTO "status_histories" ("order_id", "from_status", "to_status", "comment", "created_by", "created_at", "updated_at") VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING "id"[0m  [["order_id", 1], ["from_status", nil], ["to_status", "pending"], ["comment", nil], ["created_by", "system"], ["created_at", "2025-03-28 08:56:14.607672"], ["updated_at", "2025-03-28 08:56:14.607672"]]
+  ↳ app/models/order.rb:22:in `create_initial_status_history'
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mcommit transaction[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mbegin transaction[0m
+  [1m[36mOrder Create (0.7ms)[0m  [1m[32mINSERT INTO "orders" ("partner_id", "order_type", "amount", "status", "order_date", "delivery_date", "notes", "created_at", "updated_at") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING "id"[0m  [["partner_id", 2], ["order_type", "purchase"], ["amount", 30000.0], ["status", "approved"], ["order_date", "2025-03-25"], ["delivery_date", "2025-04-07"], ["notes", "定期発注"], ["created_at", "2025-03-28 08:56:14.609433"], ["updated_at", "2025-03-28 08:56:14.609433"]]
+  [1m[36mStatusHistory Create (0.1ms)[0m  [1m[32mINSERT INTO "status_histories" ("order_id", "from_status", "to_status", "comment", "created_by", "created_at", "updated_at") VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING "id"[0m  [["order_id", 2], ["from_status", nil], ["to_status", "approved"], ["comment", nil], ["created_by", "system"], ["created_at", "2025-03-28 08:56:14.611266"], ["updated_at", "2025-03-28 08:56:14.611266"]]
+  ↳ app/models/order.rb:22:in `create_initial_status_history'
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mcommit transaction[0m
