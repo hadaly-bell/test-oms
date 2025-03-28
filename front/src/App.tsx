@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { SalesPage } from './pages/SalesPage';
@@ -7,10 +6,21 @@ import { PartnersPage } from './pages/PartnersPage';
 import { AccountPage } from './pages/AccountPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ToastContainer } from './components/ToastContainer';
-import { useToast } from './hooks/useToast';
+import { useState, useCallback } from 'react';
+import type { ToastMessage } from './components/ToastContainer';
+import type { ToastType } from './components/Toast';
 
 function App() {
-  const { toasts, removeToast } = useToast();
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = useCallback((type: ToastType, message: string) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts((prev) => [...prev, { id, type, message }]);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }, []);
 
   return (
     <BrowserRouter>

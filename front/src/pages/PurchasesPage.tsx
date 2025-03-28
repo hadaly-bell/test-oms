@@ -1,75 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { OrderTable } from '../components/OrderTable';
 import { OrderForm } from '../components/OrderForm';
 import { OrderDetail } from '../components/OrderDetail';
 import { Drawer } from '../components/Drawer';
 import type { Order, Partner } from '../types';
-
-// モックデータ
-const mockOrders: Order[] = [
-  {
-    id: 3,
-    partnerId: 3,
-    type: 'purchase',
-    amount: 320000,
-    status: 'approved',
-    orderDate: '2024-03-14T00:00:00Z',
-    deliveryDate: '2024-03-22T00:00:00Z',
-    notes: '承認済み',
-    createdAt: '2024-03-14T00:00:00Z',
-    updatedAt: '2024-03-14T00:00:00Z',
-    statusHistory: [],
-  },
-  {
-    id: 4,
-    partnerId: 4,
-    type: 'purchase',
-    amount: 180000,
-    status: 'pending',
-    orderDate: '2024-03-17T00:00:00Z',
-    deliveryDate: null,
-    notes: '見積もり確認中',
-    createdAt: '2024-03-17T00:00:00Z',
-    updatedAt: '2024-03-17T00:00:00Z',
-    statusHistory: [],
-  },
-];
-
-// モックの取引先データ
-const mockPartners: Partner[] = [
-  {
-    id: 3,
-    name: '株式会社サプライ',
-    representativeLastName: '佐藤',
-    representativeFirstName: '次郎',
-    email: 'sato@supply.com',
-    phone: '03-2345-6789',
-    address: '東京都新宿区...',
-    type: 'supplier',
-    createdAt: '2024-03-14T00:00:00Z',
-    updatedAt: '2024-03-14T00:00:00Z',
-  },
-  {
-    id: 4,
-    name: '株式会社メーカー',
-    representativeLastName: '田中',
-    representativeFirstName: '三郎',
-    email: 'tanaka@maker.com',
-    phone: '03-9876-5432',
-    address: '東京都品川区...',
-    type: 'supplier',
-    createdAt: '2024-03-14T00:00:00Z',
-    updatedAt: '2024-03-14T00:00:00Z',
-  },
-];
+import { orderApi, partnerApi, statusHistoryApi } from '../services/api';
+import { useToast } from '../hooks/useToast';
 
 type Mode = 'list' | 'detail' | 'form';
 
 export function PurchasesPage() {
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [partners, setPartners] = useState<Partner[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [mode, setMode] = useState<Mode>('list');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { addToast } = useToast();
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [ordersData, partnersData] = await Promise.all([
+        orderApi.getAll('purchase'),
+        partnerApi.getAll()
+      ]);
+      setOrders(ordersData);
+      setPartners(partnersData);
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+      addToast('error', 'データの取得に失敗しました。');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleAdd = () => {
     setSelectedOrder(null);
@@ -86,69 +54,93 @@ export function PurchasesPage() {
     setIsDrawerOpen(true);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (window.confirm('本当に削除しますか？')) {
-      setOrders(orders.filter(order => order.id !== id));
-    }
-  };
-
-  const handleSubmit = (data: Partial<Order>) => {
-    if (selectedOrder) {
-      setOrders(orders.map(order =>
-        order.id === selectedOrder.id
-          ? { ...selectedOrder, ...data, updatedAt: new Date().toISOString() }
-          : order
-      ));
-    } else {
-      const newOrder: Order = {
-        id: Math.max(...orders.map(order => order.id)) + 1,
-        ...data as Omit<Order, 'id' | 'createdAt' | 'updatedAt' | 'statusHistory'>,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        statusHistory: [],
-      };
-      setOrders([...orders, newOrder]);
-    }
-    setIsDrawerOpen(false);
-  };
-
-  const handleStatusChange = (orderId: number, newStatus: Order['status'], comment: string) => {
-    setOrders(orders.map(order => {
-      if (order.id === orderId) {
-        const statusHistory = [
-          ...order.statusHistory,
-          {
-            id: Math.random(), // 実際のアプリではサーバーで生成
-            orderId,
-            fromStatus: order.status,
-            toStatus: newStatus,
-            comment,
-            createdAt: new Date().toISOString(),
-            createdBy: 'システム', // 後で認証ユーザー名に変更
-          }
-        ];
-        return {
-          ...order,
-          status: newStatus,
-          statusHistory,
-          updatedAt: new Date().toISOString(),
-        };
+      try {
+        await orderApi.delete(id);
+        setOrders(orders.filter(order => order.id !== id));
+        addToast('success', '発注を削除しました。');
+      } catch (error) {
+        console.error('Failed to delete order:', error);
+        addToast('error', '発注の削除に失敗しました。');
       }
-      return order;
-    }));
+    }
+  };
+
+  const handleSubmit = async (data: Partial<Order>) => {
+    try {
+      if (selectedOrder) {
+        const updatedOrder = await orderApi.update(selectedOrder.id, data);
+        setOrders(orders.map(order =>
+          order.id === selectedOrder.id ? updatedOrder : order
+        ));
+        addToast('success', '発注を更新しました。');
+      } else {
+        const newOrder = await orderApi.create({
+          ...data as Omit<Order, 'id' | 'createdAt' | 'updatedAt' | 'statusHistory'>,
+          type: 'purchase'
+        });
+        setOrders([...orders, newOrder]);
+        addToast('success', '新規発注を登録しました。');
+      }
+      setIsDrawerOpen(false);
+    } catch (error) {
+      console.error('Failed to save order:', error);
+      addToast('error', '発注の保存に失敗しました。');
+    }
+  };
+
+  const handleStatusChange = async (orderId: number, newStatus: Order['status'], comment: string) => {
+    try {
+      const orderToUpdate = orders.find(o => o.id === orderId);
+      if (!orderToUpdate) return;
+
+      const updatedOrder = await orderApi.update(orderId, { status: newStatus });
+      
+      await statusHistoryApi.create({
+        orderId,
+        fromStatus: orderToUpdate.status,
+        toStatus: newStatus,
+        comment,
+        createdBy: 'システム', // 後で認証ユーザー名に変更
+      });
+
+      setOrders(orders.map(order => {
+        if (order.id === orderId) {
+          return updatedOrder;
+        }
+        return order;
+      }));
+
+      addToast('success', 'ステータスを更新しました。');
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      addToast('error', 'ステータスの更新に失敗しました。');
+    }
   };
 
   const getPartnerById = (id: number) => {
-    return mockPartners.find(partner => partner.id === id)!;
+    return partners.find(partner => partner.id === id);
   };
 
   const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      );
+    }
+
     if (mode === 'detail' && selectedOrder) {
+      const partner = getPartnerById(selectedOrder.partnerId);
+      if (!partner) return null;
+      
       return (
         <div className="bg-white shadow rounded-lg p-6">
           <OrderDetail
             order={selectedOrder}
-            partner={getPartnerById(selectedOrder.partnerId)}
+            partner={partner}
             onEdit={() => {
               setMode('list');
               setIsDrawerOpen(true);
@@ -174,7 +166,7 @@ export function PurchasesPage() {
 
         <OrderTable
           orders={orders}
-          partners={mockPartners}
+          partners={partners}
           type="purchase"
           onView={handleView}
           onEdit={handleEdit}
@@ -190,7 +182,7 @@ export function PurchasesPage() {
           <OrderForm
             type="purchase"
             order={selectedOrder ?? undefined}
-            partners={mockPartners}
+            partners={partners}
             onSubmit={handleSubmit}
             onCancel={() => setIsDrawerOpen(false)}
           />
